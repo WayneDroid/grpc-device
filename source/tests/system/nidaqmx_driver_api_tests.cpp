@@ -897,6 +897,16 @@ class NiDAQmxDriverApiTests : public Test {
     return status;
   }
 
+  ::grpc::Status get_ext_cal_last_date_and_time(GetExtCalLastDateAndTimeResponse& response)
+  {
+    ::grpc::ClientContext context;
+    GetExtCalLastDateAndTimeRequest request;
+    request.set_device_name(DEVICE_NAME);
+    auto status = stub()->GetExtCalLastDateAndTime(&context, request, &response);
+    client::raise_if_error(status, context);
+    return status;
+  }
+
   ::grpc::Status add_network_device(const std::string& ip_address, AddNetworkDeviceResponse& response)
   {
     ::grpc::ClientContext context;
@@ -1511,7 +1521,7 @@ TEST_F(NiDAQmxDriverApiTests, AIFiniteAcquisition_ReadWithTimeoutTooSmall_Sample
   const auto NUM_SAMPS = 60000;
   cfg_samp_clk_timing(
       create_cfg_samp_clk_timing_request(SAMPLE_RATE, Edge1::EDGE1_RISING, AcquisitionType::ACQUISITION_TYPE_FINITE_SAMPS , SAMPLES_PER_CHAN));
-  
+
   start_task();
   ReadAnalogF64Response read_response;
   read_analog_f64(NUM_SAMPS, NUM_SAMPS, TIMEOUT, read_response);
@@ -2071,6 +2081,14 @@ TEST_F(NiDAQmxDriverApiTests, SelfCal_Succeeds)
   auto status = self_cal(response);
 
   EXPECT_SUCCESS(status, response);
+}
+
+TEST_F(NiDAQmxDriverApiTests, GetExtCalLastDateAndTime_Succeeds)
+{
+  EXPECT_THROW_DRIVER_ERROR({
+    auto response = GetExtCalLastDateAndTimeResponse{};
+    auto status = get_ext_cal_last_date_and_time(response);
+  }, INVALID_ATTRIBUTE_VALUE_ERROR);
 }
 
 TEST_F(NiDAQmxDriverApiTests, AddNetworkDeviceWithInvalidIP_ErrorRetrievingNetworkDeviceProperties)
